@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Second Home Affordability Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Basic styling for the message box */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Home Affordability Calculator</h1>
+        <p class="text-sm text-center text-gray-600 mb-6">Stamp Duty Land Tax (SDLT) rates last updated - April 1, 2025.</p>
+
+        <div class="space-y-4">
+            <!-- New radio buttons for home type -->
+            <div class="flex justify-center space-x-6 mb-4">
+                <div class="flex items-center">
+                    <input type="radio" id="firstHome" name="homeType" value="first" class="form-radio h-4 w-4 text-blue-600" checked>
+                    <label for="firstHome" class="ml-2 text-gray-700">First Home</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" id="secondHome" name="homeType" value="second" class="form-radio h-4 w-4 text-blue-600">
+                    <label for="secondHome" class="ml-2 text-gray-700">Second Home</label>
+                </div>
+            </div>
+
+            <div>
+                <label for="houseCost" class="block text-sm font-medium text-gray-700 mb-1">Cost of the House (£)</label>
+                <input type="number" id="houseCost" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm" placeholder="e.g., 300000">
+            </div>
+            <div>
+                <label for="totalIncome" class="block text-sm font-medium text-gray-700 mb-1">Total Annual Income (£)</label>
+                <input type="number" id="totalIncome" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm" placeholder="e.g., 60000">
+            </div>
+            <div>
+                <label for="savings" class="block text-sm font-medium text-gray-700 mb-1">Current Savings (£)</label>
+                <input type="number" id="savings" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm" placeholder="e.g., 100000">
+            </div>
+            <div>
+                <label for="minBankBalance" class="block text-sm font-medium text-gray-700 mb-1">Minimum Amount to Keep in Bank (£)</label>
+                <input type="number" id="minBankBalance" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm" placeholder="e.g., 20000">
+            </div>
+
+            <button id="calculateBtn" class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md transition duration-150 ease-in-out">
+                Calculate Affordability
+            </button>
+
+            <div id="result" class="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50 text-center text-lg font-semibold text-gray-800 hidden">
+                <!-- Calculation result will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box for alerts -->
+    <div id="messageBoxOverlay" class="message-box-overlay"></div>
+    <div id="messageBox" class="message-box">
+        <p id="messageBoxText" class="text-gray-800 mb-4"></p>
+        <button id="messageBoxClose" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            OK
+        </button>
+    </div>
+
+    <script>
+        // Function to show a custom message box
+        function showMessageBox(message) {
+            const messageBox = document.getElementById('messageBox');
+            const messageBoxOverlay = document.getElementById('messageBoxOverlay');
+            const messageBoxText = document.getElementById('messageBoxText');
+
+            messageBoxText.textContent = message;
+            messageBox.style.display = 'block';
+            messageBoxOverlay.style.display = 'block';
+        }
+
+        // Event listener for the message box close button
+        document.getElementById('messageBoxClose').addEventListener('click', () => {
+            document.getElementById('messageBox').style.display = 'none';
+            document.getElementById('messageBoxOverlay').style.display = 'none';
+        });
+
+        // Function to calculate Stamp Duty Land Tax (SDLT) based on home type
+        // Rates are for properties purchased from April 1, 2025 onwards.
+        function calculateSDLT(propertyValue, isSecondHome) {
+            let sdlt = 0;
+
+            if (isSecondHome) {
+                // Higher rates for second homes
+                if (propertyValue <= 40000) {
+                    sdlt = 0; // Properties under £40,000 are exempt from SDLT for second homes
+                } else if (propertyValue <= 125000) {
+                    sdlt = propertyValue * 0.05; // 5%
+                } else if (propertyValue <= 250000) {
+                    sdlt = (125000 * 0.05) + ((propertyValue - 125000) * 0.07); // 5% on first £125k, 7% on next portion
+                } else if (propertyValue <= 925000) {
+                    sdlt = (125000 * 0.05) + (125000 * 0.07) + ((propertyValue - 250000) * 0.10); // 5% + 7% + 10% on next portion
+                } else if (propertyValue <= 1500000) {
+                    sdlt = (125000 * 0.05) + (125000 * 0.07) + (675000 * 0.10) + ((propertyValue - 925000) * 0.15); // 5% + 7% + 10% + 15% on next portion
+                } else {
+                    sdlt = (125000 * 0.05) + (125000 * 0.07) + (675000 * 0.10) + (575000 * 0.15) + ((propertyValue - 1500000) * 0.17); // 5% + 7% + 10% + 15% + 17% on remaining
+                }
+            } else {
+                // Standard rates for first homes
+                if (propertyValue <= 125000) {
+                    sdlt = 0; // 0%
+                } else if (propertyValue <= 250000) {
+                    sdlt = (propertyValue - 125000) * 0.02; // 2% on portion above £125k
+                } else if (propertyValue <= 925000) {
+                    sdlt = (125000 * 0.00) + (125000 * 0.02) + ((propertyValue - 250000) * 0.05); // 0% + 2% + 5% on next portion
+                } else if (propertyValue <= 1500000) {
+                    sdlt = (125000 * 0.00) + (125000 * 0.02) + (675000 * 0.05) + ((propertyValue - 925000) * 0.10); // 0% + 2% + 5% + 10% on next portion
+                } else {
+                    sdlt = (125000 * 0.00) + (125000 * 0.02) + (675000 * 0.05) + (575000 * 0.10) + ((propertyValue - 1500000) * 0.12); // 0% + 2% + 5% + 10% + 12% on remaining
+                }
+            }
+            return sdlt;
+        }
+
+        document.getElementById('calculateBtn').addEventListener('click', () => {
+            const houseCost = parseFloat(document.getElementById('houseCost').value);
+            const totalIncome = parseFloat(document.getElementById('totalIncome').value);
+            const savings = parseFloat(document.getElementById('savings').value);
+            const minBankBalance = parseFloat(document.getElementById('minBankBalance').value);
+            const resultDiv = document.getElementById('result');
+
+            // Determine if it's a second home based on radio button selection
+            const isSecondHome = document.getElementById('secondHome').checked;
+
+            // Input validation
+            if (isNaN(houseCost) || houseCost <= 0) {
+                showMessageBox('Please enter a valid cost for the house.');
+                resultDiv.classList.add('hidden');
+                return;
+            }
+            if (isNaN(totalIncome) || totalIncome <= 0) {
+                showMessageBox('Please enter a valid total annual income.');
+                resultDiv.classList.add('hidden');
+                return;
+            }
+            if (isNaN(savings) || savings < 0) {
+                showMessageBox('Please enter valid current savings.');
+                resultDiv.classList.add('hidden');
+                return;
+            }
+            if (isNaN(minBankBalance) || minBankBalance < 0) {
+                showMessageBox('Please enter a valid minimum amount to keep in the bank.');
+                resultDiv.classList.add('hidden');
+                return;
+            }
+
+            // Calculate Stamp Duty
+            const stampDuty = calculateSDLT(houseCost, isSecondHome);
+            const totalPurchaseCost = houseCost + stampDuty;
+
+            // Calculate available funds for down payment (assuming mortgage for the rest)
+            const availableForDownPayment = savings - minBankBalance;
+
+            // LTV Calculation
+            const minCashRequiredForLTV = houseCost * 0.10; // 10% of house value must be cash
+            const maxMortgageAllowedByLTV = houseCost * 0.90; // 90% LTV limit
+
+            let affordabilityMessage = '';
+            let affordabilityColor = '';
+            let ltvMessage = '';
+            let ltvColor = '';
+            let additionalSavingsRequired = 0; // Initialize additional savings required
+
+            // Check LTV first
+            if (availableForDownPayment < minCashRequiredForLTV) {
+                ltvMessage = `You need at least £${minCashRequiredForLTV.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cash for the 10% deposit (LTV limit). You currently have £${availableForDownPayment.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} available.`;
+                ltvColor = 'text-red-600';
+                affordabilityMessage = `The house is likely not affordable as your available cash does not meet the minimum 10% deposit requirement.`;
+                affordabilityColor = 'text-red-600';
+                additionalSavingsRequired = minCashRequiredForLTV - availableForDownPayment;
+            } else {
+                ltvMessage = `Your available cash meets the minimum 10% deposit requirement.`;
+                ltvColor = 'text-green-600';
+
+                if (availableForDownPayment >= totalPurchaseCost) {
+                    // If savings cover the entire house cost + SDLT
+                    affordabilityMessage = `You have enough savings to purchase the house outright, including Stamp Duty. Remaining funds after purchase: £${(availableForDownPayment - totalPurchaseCost).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    affordabilityColor = 'text-green-600';
+                } else {
+                    // If savings can cover a down payment, calculate potential mortgage needed
+                    const mortgageNeeded = totalPurchaseCost - availableForDownPayment;
+
+                    // Simple affordability check: A common rule of thumb is that a mortgage should be around 4-4.5 times annual income.
+                    const maxMortgageBasedOnIncome = totalIncome * 4.5; // Using 4.5x income as a general guideline
+
+                    // Combine income-based mortgage limit with LTV mortgage limit
+                    const effectiveMaxMortgage = Math.min(maxMortgageBasedOnIncome, maxMortgageAllowedByLTV);
+
+                    if (mortgageNeeded <= effectiveMaxMortgage) {
+                        affordabilityMessage = `Based on your savings, income, and LTV, the house appears affordable. You would likely need a mortgage of approximately £${mortgageNeeded.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`;
+                        affordabilityColor = 'text-green-600';
+                    } else {
+                        affordabilityMessage = `The house may not be affordable based on your current savings and income. You would need a mortgage of approximately £${mortgageNeeded.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, which exceeds typical lending guidelines or the 90% LTV limit for your income/property value.`;
+                        affordabilityColor = 'text-red-600';
+                        additionalSavingsRequired = mortgageNeeded - effectiveMaxMortgage;
+                    }
+                }
+            }
+
+            let additionalSavingsMessage = '';
+            if (affordabilityColor === 'text-red-600' && additionalSavingsRequired > 0) {
+                additionalSavingsMessage = `<p class="text-red-600 mt-2">You would need an additional £${additionalSavingsRequired.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in savings to make this purchase affordable.</p>`;
+            }
+
+
+            resultDiv.innerHTML = `
+                <p class="text-gray-800 mb-2">House Cost: £${houseCost.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p class="text-gray-800 mb-2">Estimated Stamp Duty: £${stampDuty.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p class="text-gray-800 mb-2 font-bold">Total Purchase Cost (House + SDLT): £${totalPurchaseCost.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p class="text-gray-800 mb-2">Available Cash (for deposit): £${availableForDownPayment.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p class="${ltvColor} mb-4">LTV Check: ${ltvMessage}</p>
+                <p class="${affordabilityColor} mt-4">${affordabilityMessage}</p>
+                ${additionalSavingsMessage}
+            `;
+            resultDiv.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
