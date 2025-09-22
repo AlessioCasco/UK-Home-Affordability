@@ -2,6 +2,9 @@
 
 A simple, user-friendly web application to calculate home affordability in the UK, including accurate Stamp Duty Land Tax (SDLT) calculations for both first-time buyers and second home purchases.
 
+## Use the website
+You can use the website [here](https://alessiocasco.github.io/UK-Home-Affordability/)
+
 ## Features
 
 - **Dual Home Type Support**: Calculate affordability for both first homes and second homes
